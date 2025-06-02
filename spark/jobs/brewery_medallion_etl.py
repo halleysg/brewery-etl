@@ -85,6 +85,9 @@ def process_silver_layer(spark, bronze_path, ds_nodash):
     # Read Bronze data
     df_bronze = spark.read.parquet(f"{bronze_path}/execution_ds={ds_nodash}")
     
+    if df_bronze.isEmpty():
+        raise ValueError(f"Empty Dataframe: No data to process")
+    
     # Clean and standardize
     df_silver = (df_bronze
         .dropna(subset=["id", "brewery_type"])
@@ -135,10 +138,13 @@ def process_gold_layer(spark, silver_path):
     print("\nProcessing Gold Layer")
     
     # Read Silver data
-    df_silver = spark.read.parquet(silver_path).filter(col("valid_record"))
+    df_silver_valid = spark.read.parquet(silver_path).filter(col("valid_record"))
+    
+    if df_silver_valid.isEmpty():
+        raise ValueError(f"Empty Dataframe: No data to process")
     
     # 1. Brewery summary by location and type
-    df_summary = (df_silver
+    df_summary = (df_silver_valid
         .groupBy("country", "state", "city", "brewery_type")
         .count().alias("brewery_count")
         .orderBy("country", "state", "city", "brewery_type")
