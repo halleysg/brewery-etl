@@ -44,8 +44,9 @@ brewery-pipeline/
 ├── compose.yml                       # Container orchestration
 ├── Dockerfile                        # Airflow + PySpark image
 ├── requirements.txt                  # Python dependencies
-├── dags/
-│   └── brewery_pipeline.py           # Main ETL DAG
+├── airflow/
+│   └── dags/           
+│      └── brewery_pipeline.py        # Main ETL DAG
 ├── spark/
 │   └── jobs/   
 │      ├── fetch_brewery_data.py      # Fetch API data 
@@ -107,7 +108,7 @@ API Fetch → Bronze Layer → Silver Layer → Gold Layer
 # View DAG runs
 airflow dags list-runs -d brewery_etl_pipeline
 
-# Check task status
+# List tasks
 airflow tasks list brewery_etl_pipeline
 ```
 
@@ -135,15 +136,6 @@ agg_df.show()
 - **Task Duration**: Performance metrics
 - **XCom**: Inter-task data passing
 
-### Cleanup Commands
-```bash
-# Remove old logs
-find ./logs -name "*.log" -mtime +7 -delete
-
-# Cleanup old data partitions
-docker-compose exec airflow-webserver python scripts/cleanup_old_partitions.py
-```
-
 ## 📋 API Reference
 
 ### Data Schema
@@ -157,18 +149,16 @@ root
  |-- city: string (title case)
  |-- state: string (title case)
  |-- country: string (title case)
- |-- postal_code: string (digits only)
- |-- latitude: double
- |-- longitude: double
- |-- phone: string (digits only)
+ |-- postal_code: int (digits only)
+ |-- latitude: decimal
+ |-- longitude: decimal
+ |-- phone: bigint (digits only)
  |-- website_url: string
- |-- has_coordinates: boolean
- |-- has_website: boolean
- |-- _silver_timestamp: timestamp
- |-- _is_complete_record: boolean
+ |-- ingestion_timestamp: timestamp
+ |-- valid_record: boolean
 ```
 
 ---
 
-**Last Updated**: June 2025  
-**Version**: 1.0.0
+**Last Updated**: June 2025
+**Version**: 1.0.1
