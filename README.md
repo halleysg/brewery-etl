@@ -13,18 +13,18 @@ A ETL pipeline for processing Open Brewery DB API data using Apache Airflow, PyS
 
 1. **Clone the repository**
    ```bash
-   https://github.com/halleysg/brewery-etl.git
+   git clone https://github.com/halleysg/brewery-etl.git
    cd brewery-etl
    ```
 
 2. **Build the Docker images**
    ```bash
-   docker-compose build
+   docker compose build
    ```
 
 3. **Start the services**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. **Access Airflow UI**
