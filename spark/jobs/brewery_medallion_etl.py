@@ -2,10 +2,10 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StringType, IntegerType, LongType, DecimalType
 from pyspark.sql.functions import current_timestamp, lit, col, trim, regexp_replace, when, initcap, lower, concat_ws, nvl
 import os
-import sys
 
 def create_spark_session():
     """Create and return Spark session"""
+    
     print("Creating Spark session")
 
     spark = SparkSession.builder \
@@ -49,7 +49,7 @@ def check_raw_data(ds_nodash):
 def process_bronze_layer(spark, raw_json_path, ds_nodash):
     """Bronze Layer: Raw data ingestion"""
     
-    print("\nProcessing Bronze Layer")
+    print("Processing Bronze Layer")
     
     # Check if file exists
     if not os.path.exists(raw_json_path):
@@ -80,7 +80,7 @@ def process_bronze_layer(spark, raw_json_path, ds_nodash):
 def process_silver_layer(spark, bronze_path, ds_nodash):
     """Silver Layer: Cleaned and standardized data"""
     
-    print("\nProcessing Silver Layer")
+    print("Processing Silver Layer")
     
     # Read Bronze data
     df_bronze = spark.read.parquet(f"{bronze_path}/execution_ds={ds_nodash}")
@@ -135,7 +135,8 @@ def process_silver_layer(spark, bronze_path, ds_nodash):
 
 def process_gold_layer(spark, silver_path):
     """Gold Layer: Business-ready aggregations and analytics"""
-    print("\nProcessing Gold Layer")
+    
+    print("Processing Gold Layer")
     
     # Read Silver data
     df_silver_valid = spark.read.parquet(silver_path).filter(col("valid_record"))
@@ -156,39 +157,32 @@ def process_gold_layer(spark, silver_path):
     df_summary.coalesce(1).write.mode("overwrite").parquet(gold_path)
     
     # Display results
-    print("\n📊 Breweries Summary:")
+    print("📊 Breweries Summary:")
     df_summary.show(10, truncate=False)
 
-    print(f"\n✓ Gold layer saved")
+    print(f"✓ Gold layer saved")
 
 def brewery_medallion_etl(**context):
     """Main ETL pipeline"""    
-    spark = None
 
-    try:
-        print("\n" + "=" * 50)
-        print("STARTING ETL PIPELINE")
-        print("=" * 50)
-        
-        # Create Spark session
-        spark = create_spark_session()
-        spark.sparkContext.setLogLevel("WARN")
-        
-        raw_file_path = check_raw_data(context['ds_nodash'])
-        print(f"Processing file")
-        
-        # Process through medallion layers
-        bronze_path = process_bronze_layer(spark, raw_file_path, context['ds_nodash'])
-        silver_path = process_silver_layer(spark, bronze_path, context['ds_nodash'])
-        process_gold_layer(spark, silver_path)
-        
-        print("\n" + "=" * 50)
-        print("ETL PIPELINE COMPLETED SUCCESSFULLY")
-        print("=" * 50)
-        
-    except Exception as e:
-        print(f"\nETL PIPELINE FAILED: {str(e)}", file=sys.stderr)
-        raise
-    finally:
-        if spark:
-            spark.stop()
+    print("=" * 50)
+    print("STARTING ETL PIPELINE")
+    print("=" * 50)
+    
+    # Create Spark session
+    spark = create_spark_session()
+    spark.sparkContext.setLogLevel("WARN")
+    
+    raw_file_path = check_raw_data(context['ds_nodash'])
+    print(f"Processing file")
+    
+    # Process through medallion layers
+    bronze_path = process_bronze_layer(spark, raw_file_path, context['ds_nodash'])
+    silver_path = process_silver_layer(spark, bronze_path, context['ds_nodash'])
+    process_gold_layer(spark, silver_path)
+    
+    print("=" * 50)
+    print("ETL PIPELINE COMPLETED SUCCESSFULLY")
+    print("=" * 50)
+    
+    spark.stop()
