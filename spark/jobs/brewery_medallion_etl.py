@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StringType
-from pyspark.sql.functions import current_timestamp, lit, col, trim, regexp_replace, count, count_distinct, when, initcap, lower, avg, size, collect_set, sum as sum_, round as round_
+from pyspark.sql.types import StringType, IntegerType, LongType, DecimalType
+from pyspark.sql.functions import current_timestamp, lit, col, trim, regexp_replace, when, initcap, lower
 import os
 import sys
 
@@ -96,13 +96,13 @@ def process_silver_layer(spark, bronze_path, ds_nodash):
             initcap(trim(col("city"))).alias("city"), # Capitalizing cities
             initcap(trim(col("state"))).alias("state"), # Capitalizing states
             initcap(trim(col("country"))).alias("country"), # Capitalizing country
-            regexp_replace(col("postal_code"), "[^0-9-]", "").alias("postal_code"), # Only numbers
-            regexp_replace(col("phone"), "[^0-9]", "").alias("phone"), # Only numbers
+            regexp_replace(col("postal_code"), "[^0-9-]", "").cast(IntegerType()).alias("postal_code"), # Only numbers
+            regexp_replace(col("phone"), "[^0-9]", "").cast(LongType()).alias("phone"), # Only numbers
             "address_1",
             "address_2",
             "address_3",
-            "latitude",
-            "longitude",
+            col("latitude").cast(DecimalType(2,8)),  #Cast to decimal
+            col("longitude").cast(DecimalType(3,8)), #Cast to decimal
             "website_url",
             current_timestamp().alias("ingestion_timestamp"),
             when(
