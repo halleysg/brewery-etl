@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StringType, IntegerType, LongType, DecimalType
-from pyspark.sql.functions import current_timestamp, lit, col, trim, regexp_replace, when, initcap, lower
+from pyspark.sql.functions import current_timestamp, lit, col, trim, regexp_replace, when, initcap, lower, concat_ws, nvl
 import os
 import sys
 
@@ -92,25 +92,27 @@ def process_silver_layer(spark, bronze_path, ds_nodash):
         .select(
             "id",
             trim(col("name")).alias("name"),
-            lower(trim(col("brewery_type"))).alias("brewery_type"), # Standardize
-            initcap(trim(col("city"))).alias("city"), # Capitalizing cities
-            initcap(trim(col("state"))).alias("state"), # Capitalizing states
-            initcap(trim(col("country"))).alias("country"), # Capitalizing country
+            lower(trim(col("brewery_type"))).alias("brewery_type"),                                     # Standardize
+            initcap(trim(col("city"))).alias("city"),                                                   # Capitalizing cities
+            initcap(trim(nvl(col("state"), col("state_province")))).alias("state"),                     # Capitalizing states
+            initcap(trim(col("country"))).alias("country"),                                             # Capitalizing country
             regexp_replace(col("postal_code"), "[^0-9-]", "").cast(IntegerType()).alias("postal_code"), # Only numbers
-            regexp_replace(col("phone"), "[^0-9]", "").cast(LongType()).alias("phone"), # Only numbers
-            "address_1",
-            "address_2",
-            "address_3",
-            col("latitude").cast(DecimalType(2,8)),  #Cast to decimal
-            col("longitude").cast(DecimalType(3,8)), #Cast to decimal
+            regexp_replace(col("phone"), "[^0-9]", "").cast(LongType()).alias("phone"),                 # Only numbers
+            concat_ws(", ",
+                nvl(col("address_1"), col("street")),
+                col("address_2"),
+                col("address_3")
+            ).alias("full_address"),
+            col("latitude").cast(DecimalType(10,8)),  # Cast to decimal
+            col("longitude").cast(DecimalType(11,8)), # Cast to decimal
             "website_url",
             current_timestamp().alias("ingestion_timestamp"),
             when(
-                (col("name").isNotNull()) & 
-                (col("city").isNotNull()) & 
-                (col("state").isNotNull()) &
+                (col("name").isNotNull()) &
+                (col("city").isNotNull()) &
+                (col("state").isNotNull() | col("state_province").isNotNull()) &
                 (col("country").isNotNull()), True
-            ).otherwise(False).alias("valid_record")
+            ).otherwise(False).alias("valid_record") # Create Full Adress
         )
     )
 
