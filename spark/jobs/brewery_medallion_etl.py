@@ -92,12 +92,12 @@ def process_silver_layer(spark, bronze_path, ds_nodash):
         .select(
             "id",
             trim(col("name")).alias("name"),
-            lower(trim(col("brewery_type"))).alias("brewery_type"),                                     # Standardize
-            initcap(trim(col("city"))).alias("city"),                                                   # Capitalizing cities
-            initcap(trim(nvl(col("state"), col("state_province")))).alias("state"),                     # Capitalizing states
-            initcap(trim(col("country"))).alias("country"),                                             # Capitalizing country
-            regexp_replace(col("postal_code"), "[^0-9-]", "").cast(IntegerType()).alias("postal_code"), # Only numbers
-            regexp_replace(col("phone"), "[^0-9]", "").cast(LongType()).alias("phone"),                 # Only numbers
+            lower(trim(col("brewery_type"))).alias("brewery_type"),                                    # Standardize
+            initcap(trim(col("city"))).alias("city"),                                                  # Capitalizing cities
+            initcap(trim(nvl(col("state"), col("state_province")))).alias("state"),                    # Capitalizing states
+            initcap(trim(col("country"))).alias("country"),                                            # Capitalizing country
+            regexp_replace(col("postal_code"), "[^0-9]", "").cast(IntegerType()).alias("postal_code"), # Only numbers
+            regexp_replace(col("phone"), "[^0-9]", "").cast(LongType()).alias("phone"),                # Only numbers
             concat_ws(", ",
                 nvl(col("address_1"), col("street")),
                 col("address_2"),
